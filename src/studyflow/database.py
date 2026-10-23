@@ -47,3 +47,99 @@ def make_tables():
 
     finally:
         con.close()
+
+
+def add_subject(name):
+    con = get_connection()
+
+    try:
+        cursor = con.execute(
+        "INSERT INTO subjects (name) VALUES (?);",
+        (name,),
+        )
+        con.commit()
+        subject_id = cursor.lastrowid
+        return subject_id
+    finally:
+        con.close()
+
+
+def list_subjects():
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("SELECT id, name FROM subjects ORDER BY name;")
+        return cursor.fetchall()
+    finally:
+        con.close()
+
+
+def add_topic(subject_id, topic_name):
+
+    con = get_connection()
+    cursor = con.cursor()
+
+    try:
+        cursor.execute("INSERT INTO topics (subject_id, topic_name) values(?, ?);",
+        (subject_id, topic_name))
+        con.commit()
+        topic_id = cursor.lastrowid
+        return topic_id
+    finally:
+        con.close()
+
+
+def list_topics(subject_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("""
+        SELECT id, subject_id, topic_name FROM topics WHERE subject_id = ?
+        ORDER BY topic_name;
+        """, (subject_id,))
+        return cursor.fetchall()
+    finally:
+        con.close()
+
+
+def add_task(topic_id, title, due_date=None):
+
+    con = get_connection()
+    cursor = con.cursor()
+
+    try:
+        cursor.execute("INSERT INTO tasks (topic_id, title, due_date) values(?, ?, ?);",
+        (topic_id, title, due_date))
+        con.commit()
+        task_id = cursor.lastrowid
+        return task_id
+    finally:
+        con.close()
+
+
+def list_tasks(topic_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("""
+        SELECT id, topic_id, title, due_date, status FROM tasks WHERE topic_id = ?
+        ORDER BY due_date;
+        """, (topic_id,))
+        return cursor.fetchall()
+    finally:
+        con.close()
+
+
+def update_task_status(task_id, new_status):
+
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("""
+        UPDATE tasks set status = ? WHERE id = ?
+        """,
+        (new_status, task_id,))
+        con.commit()
+        return cursor.rowcount == 1
+    finally:
+        con.close()
