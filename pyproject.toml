@@ -16,7 +16,7 @@ dev = [
 ]
 
 [project.scripts]
-studyflow = "studyflow.cli:main"
+sf = "studyflow.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
