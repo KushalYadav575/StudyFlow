@@ -11,6 +11,7 @@ from .database import (
     update_task_status,
 )
 
+
 parser = argparse.ArgumentParser(
     prog="sf",
     description="StudyFlow"
@@ -21,53 +22,41 @@ subparsers = parser.add_subparsers(
     required=True,
 )
 
+
 add_sub_parser = subparsers.add_parser(
     "addsub",
     help="Add a subject",
 )
+
+add_sub_parser.add_argument(
+    "--name",
+    required=True,
+    help="name of the subject",
+)
+
 
 add_topic_parser = subparsers.add_parser(
     "addtopic",
     help="Add a topic",
 )
 
+add_topic_parser.add_argument(
+    "--name",
+    required=True,
+    help="name of the topic",
+)
+
+add_topic_parser.add_argument(
+    "--subject_id",
+    required=True,
+    type=int,
+    help="id of the related subject",
+)
+
+
 add_task_parser = subparsers.add_parser(
     "addtask",
     help="Add a task",
-)
-
-list_sub_parser = subparsers.add_parser(
-    "listsubs",
-    help="list all the subjects",
-)
-
-list_topics_parser = subparsers.add_parser(
-    "listtopics",
-    help="list all the topics",
-)
-
-list_task_parser = subparsers.add_parser(
-    "listtasks",
-    help="list all the tasks",
-)
-
-update_task_status_parser = subparsers.add_parser(
-    "updtaskstatus",
-    help="Update the status of the task"
-)
-
-update_task_status_parser.add_argument(
-    "--task_id",
-    required=True,
-    type=int,
-    help="id of the respective task"
-)
-
-update_task_status_parser.add_argument(
-    "--status",
-    required=True,
-    choices=['not_started', 'in_progress', 'done'],
-    help="status of the respective task"
 )
 
 add_task_parser.add_argument(
@@ -88,11 +77,29 @@ add_task_parser.add_argument(
     help="date of when the task is due"
 )
 
+
+list_sub_parser = subparsers.add_parser(
+    "listsubs",
+    help="list all the subjects",
+)
+
+
+list_topics_parser = subparsers.add_parser(
+    "listtopics",
+    help="list all the topics",
+)
+
 list_topics_parser.add_argument(
     "--sub_id",
     required=True,
     type=int,
     help="id of the respective subject",
+)
+
+
+list_task_parser = subparsers.add_parser(
+    "listtasks",
+    help="list all the tasks",
 )
 
 list_task_parser.add_argument(
@@ -102,24 +109,31 @@ list_task_parser.add_argument(
     help="id of the respective topic",
 )
 
-add_sub_parser.add_argument(
-    "--name",
-    required=True,
-    help="name of the subject",
+
+update_task_status_parser = subparsers.add_parser(
+    "updtaskstatus",
+    help="Update the status of the task"
 )
 
-add_topic_parser.add_argument(
-    "--name",
-    required=True,
-    help="name of the topic",
-)
-
-add_topic_parser.add_argument(
-    "--subject_id",
+update_task_status_parser.add_argument(
+    "--task_id",
     required=True,
     type=int,
-    help="id of the related subject",
+    help="id of the respective task"
 )
+
+update_task_status_parser.add_argument(
+    "--status",
+    required=True,
+    choices=['not_started', 'in_progress', 'done'],
+    help="status of the respective task"
+)
+
+
+def add_sub_command(args):
+    subject_id = add_subject(args.name)
+    print(f"Subject {args.name} successfully added.")
+    print(f"ID: {subject_id}")
 
 
 def add_topic_command(args):
@@ -132,12 +146,6 @@ def add_task_command(args):
     task_id = add_task(args.topic_id, args.name, args.due_date)
     print(f"task {args.name} successfully added.")
     print(f"ID: {task_id}")
-
-
-def add_sub_command(args):
-    subject_id = add_subject(args.name)
-    print(f"Subject {args.name} successfully added.")
-    print(f"ID: {subject_id}")
 
 
 def list_sub_command(args):
@@ -163,18 +171,20 @@ def update_taskstatus_command(args):
         print("No task with that id found")
 
 
-list_sub_parser.set_defaults(func=list_sub_command)
 add_sub_parser.set_defaults(func=add_sub_command)
 add_topic_parser.set_defaults(func=add_topic_command)
-list_topics_parser.set_defaults(func=list_topics_command)
 add_task_parser.set_defaults(func=add_task_command)
+list_sub_parser.set_defaults(func=list_sub_command)
+list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
 update_task_status_parser.set_defaults(func=update_taskstatus_command)
 
+
 def main():
-     args = parser.parse_args()
-     make_tables()
-     args.func(args)
+    args = parser.parse_args()
+    make_tables()
+    args.func(args)
+
 
 if __name__ == "__main__":
     main()
