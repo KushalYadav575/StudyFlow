@@ -1,4 +1,6 @@
 import argparse
+import sqlite3
+from datetime import datetime
 
 from .database import (
     add_subject,
@@ -71,8 +73,29 @@ add_task_parser.add_argument(
     help="Name of the task"
 )
 
+
+def validate_date(date_string):
+    try:
+        if (
+            len(date_string) != 10
+            or date_string[4] != "-"
+            or date_string[7] != "-"
+        ):
+            raise ValueError
+
+        datetime.strptime(date_string, "%Y-%m-%d").date()
+        return date_string
+
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "Invalid format or date. "
+            "Must be YYYY-MM-DD and a real calendar date (e.g., 2026-10-25)."
+        )
+
+
 add_task_parser.add_argument(
     "--due_date",
+    type = validate_date,
     help="date of when the task is due"
 )
 
@@ -130,21 +153,46 @@ update_task_status_parser.add_argument(
 
 
 def add_sub_command(args):
-    subject_id = add_subject(args.name)
-    print(f"Subject {args.name} successfully added.")
-    print(f"ID: {subject_id}")
+    try:
+        subject_id = add_subject(args.name)
+    except sqlite3.IntegrityError as error:
+        if error.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+            print(f"The subject {args.name} already exists")
+        else:
+            raise
+    else:
+        print(f"Subject {args.name} successfully added.")
+        print(f"ID: {subject_id}")
 
 
 def add_topic_command(args):
-    topic_id = add_topic(args.subject_id, args.name)
-    print(f"topic {args.name} successfully added.")
-    print(f"ID: {topic_id}")
+    try:
+        topic_id = add_topic(args.subject_id, args.name)
+    except sqlite3.IntegrityError as error:
+        if error.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+            print(
+                f"Topic {args.name} already exists within subject id {args.subject_id}"
+            )
+        elif error.sqlite_errorname == "SQLITE_CONSTRAINT_FOREIGNKEY":
+            print(f"the subject id {args.subject_id} does not exist")
+        else:
+            raise
+    else:
+        print(f"topic {args.name} successfully added.")
+        print(f"ID: {topic_id}")
 
 
 def add_task_command(args):
-    task_id = add_task(args.topic_id, args.name, args.due_date)
-    print(f"task {args.name} successfully added.")
-    print(f"ID: {task_id}")
+    try:
+        task_id = add_task(args.topic_id, args.name, args.due_date)
+    except sqlite3.IntegrityError as error:
+        if error.sqlite_errorname == "SQLITE_CONSTRAINT_FOREIGNKEY":
+            print(f"the topic id {args.topic_id} does not exist")
+        else:
+            raise
+    else:
+        print(f"task {args.name} successfully added.")
+        print(f"ID: {task_id}")
 
 
 def list_sub_command(args):
