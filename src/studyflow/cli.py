@@ -11,7 +11,6 @@ from .database import (
     update_task_status,
 )
 
-
 parser = argparse.ArgumentParser(
     prog="sf",
     description="StudyFlow"
