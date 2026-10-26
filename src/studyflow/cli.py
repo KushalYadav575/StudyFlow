@@ -6,6 +6,7 @@ from .database import (
     add_subject,
     add_task,
     add_topic,
+    list_due_tasks,
     list_subjects,
     list_tasks,
     list_topics,
@@ -73,6 +74,10 @@ add_task_parser.add_argument(
     help="Name of the task"
 )
 
+list_due_tasks_parser = subparsers.add_parser(
+    "list_due_tasks",
+    help="lists all due tasks till today"
+)
 
 def validate_date(date_string):
     try:
@@ -218,6 +223,21 @@ def update_taskstatus_command(args):
         print("No task with that id found")
 
 
+def list_due_tasks_command(args):
+    tasks = list_due_tasks()
+    
+    if not tasks:
+        print("No due tasks found.")
+
+    for item in tasks:
+        print(
+            f"task id:{item[0]}, subject name:{item[1]}, "
+            f"topic name:{item[2]}, title:{item[3]}, "
+            f"due date:{item[4]}, status:{item[5]}"
+        )
+
+
+
 add_sub_parser.set_defaults(func=add_sub_command)
 add_topic_parser.set_defaults(func=add_topic_command)
 add_task_parser.set_defaults(func=add_task_command)
@@ -225,6 +245,7 @@ list_sub_parser.set_defaults(func=list_sub_command)
 list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
 update_task_status_parser.set_defaults(func=update_taskstatus_command)
+list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
 
 
 def main():

@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 
@@ -141,5 +142,27 @@ def update_task_status(task_id, new_status):
         (new_status, task_id,))
         con.commit()
         return cursor.rowcount == 1
+    finally:
+        con.close()
+
+def list_due_tasks():
+    con = get_connection()
+    cursor = con.cursor()
+    todays_date = datetime.today().isoformat()
+    try:
+        cursor.execute("""
+        SELECT tasks.id,
+        subjects.name,
+        topics.topic_name,
+        tasks.title,
+        tasks.due_date,
+        tasks.status
+        FROM tasks 
+        JOIN topics ON topics.id = tasks.topic_id
+        JOIN subjects ON subjects.id = topics.subject_id
+        WHERE tasks.due_date <= ? AND tasks.status != 'done'
+        ORDER BY tasks.due_date
+        """,(todays_date,))
+        return cursor.fetchall()
     finally:
         con.close()
