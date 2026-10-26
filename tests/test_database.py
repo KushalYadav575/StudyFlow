@@ -5,12 +5,18 @@ import pytest
 
 
 def test_schema_and_tables(db, project):
-    con = sqlite3.connect(project.db_file)
-    names = {r[0] for r in con.execute(
-        "SELECT name FROM sqlite_master WHERE type='table'")
+    con = db.get_connection()
+    try:
+        names = {
+            row[0]
+            for row in con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
         }
-    assert con.execute("PRAGMA foreign_keys;").fetchone()[0] == 1
-    con.close()
+        assert con.execute("PRAGMA foreign_keys;").fetchone()[0] == 1
+    finally:
+        con.close()
+
     assert {"subjects", "topics", "tasks"} <= names
 
 def test_subject_crud_and_constraints(db):
@@ -44,8 +50,10 @@ def test_task_crud_and_status(db, seeded):
 
 def test_sql_injection_defense(db, seeded):
     evil = "'; DROP TABLE subjects; --"
-    sid = db.add_subject(evil)
-    assert db.list_subjects() == [(sid, evil)]
+
+    subject_id = db.add_subject(evil)
+    assert (subject_id, evil) in db.list_subjects()
+
     db.add_task(seeded.topic_id, evil)
     assert db.list_tasks(seeded.topic_id)[0][2] == evil
 
