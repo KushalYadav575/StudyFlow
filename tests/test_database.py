@@ -44,9 +44,9 @@ def test_task_crud_and_status(db, seeded):
     assert tasks[0][2] == "HW1"
     assert tasks[0][4] == "not_started"
     
-    assert db.update_task_status(tid, "done") is True
+    assert db.upd_tasks(tid, "status", "done") is True
     assert db.list_tasks(seeded.topic_id)[0][4] == "done"
-    assert db.update_task_status(99999, "done") is False
+    assert db.upd_tasks(99999, "status", "done") is False
 
 def test_sql_injection_defense(db, seeded):
     evil = "'; DROP TABLE subjects; --"
@@ -71,3 +71,47 @@ def test_list_due_tasks(db, seeded, project, monkeypatch):
     assert len(due) == 1
     assert due[0][0] == overdue_id
     assert due[0][3] == "overdue"
+
+def test_update_task_fields(db, seeded):
+    task_id = db.add_task(seeded.topic_id, "HW1", "2026-10-30")
+
+    assert db.upd_tasks(task_id, "title", "HW2") is True
+    assert db.list_tasks(seeded.topic_id)[0][2] == "HW2"
+
+    assert db.upd_tasks(task_id, "status", "in_progress") is True
+    assert db.list_tasks(seeded.topic_id)[0][4] == "in_progress"
+
+    assert db.upd_tasks(task_id, "due_date", "2026-11-01") is True
+    assert db.list_tasks(seeded.topic_id)[0][3] == "2026-11-01"
+
+    assert db.upd_tasks(task_id, "due_date", None) is True
+    assert db.list_tasks(seeded.topic_id)[0][3] is None
+
+    assert db.upd_tasks(99999, "title", "Missing task") is False
+
+    with pytest.raises(ValueError):
+        db.upd_tasks(task_id, "id", 100)
+
+
+def test_update_topic(db, seeded):
+    topic_id = seeded.topic_id
+
+    assert db.upd_topic("Geometry", topic_id) is True
+    assert db.list_topics(seeded.subject_id)[0][2] == "Geometry"
+    assert db.upd_topic("Missing", 99999) is False
+
+    other_topic_id = db.add_topic(seeded.subject_id, "Calculus")
+    with pytest.raises(sqlite3.IntegrityError):
+        db.upd_topic("Geometry", other_topic_id)
+
+
+def test_update_subject(db, seeded):
+    subject_id = seeded.subject_id
+
+    assert db.upd_subject("Science", subject_id) is True
+    assert (subject_id, "Science") in db.list_subjects()
+    assert db.upd_subject("Missing", 99999) is False
+
+    other_subject_id = db.add_subject("Physics")
+    with pytest.raises(sqlite3.IntegrityError):
+        db.upd_subject("Science", other_subject_id)

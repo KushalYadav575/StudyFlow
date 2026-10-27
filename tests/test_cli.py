@@ -41,8 +41,8 @@ def test_cli_commands_workflow(sf):
     due_out = sf("list_due_tasks")
     assert "HW" in due_out
 
-    upd_out = sf("updtaskstatus", "--task_id", "1", "--status", "done")
-    assert "done applied" in upd_out
+    upd_out = sf("updtask", "--task_id", "1", "--field", "status", "--value", "done")
+    assert "done" in upd_out
 
 def test_end_to_end_subprocess(run_cli):
     r = run_cli("addsub", "--name", "Physics")
@@ -51,3 +51,42 @@ def test_end_to_end_subprocess(run_cli):
     assert r.returncode == 0
     r = run_cli()
     assert r.returncode == 2
+
+def test_cli_update_commands(sf):
+    out = sf("addsub", "--name", "Math")
+    assert "successfully added" in out
+
+    out = sf("addtopic", "--name", "Algebra", "--subject_id", "1")
+    assert "successfully added" in out
+
+    out = sf("addtask", "--topic_id", "1", "--name", "HW1")
+    assert "successfully added" in out
+
+    out = sf("updtask", "--task_id", "1", "--field", "title", "--value", "HW2")
+    assert "HW2" in out
+
+    out = sf("updtask", "--task_id", "1", "--field", "status", "--value", "done")
+    assert "done" in out
+
+    out = sf("updtask", "--task_id", "1", "--field", "due_date", "--value", "2026-11-01")
+    assert "2026-11-01" in out
+
+    out = sf("updtask", "--task_id", "1", "--field", "due_date")
+    assert "Due date cleared" in out
+
+    out = sf("updtitle", "--topic_id", "1", "--title", "Geometry")
+    assert "topic name updated" in out
+
+    out = sf("updsubject", "--subject_id", "1", "--title", "Science")
+    assert "subject name updated" in out
+
+
+def test_cli_update_missing_ids(sf):
+    out = sf("updtask", "--task_id", "99999", "--field", "title", "--value", "Missing")
+    assert "No task with that id" in out
+
+    out = sf("updtitle", "--topic_id", "99999", "--title", "Missing")
+    assert "doesnot exist" in out
+
+    out = sf("updsubject", "--subject_id", "99999", "--title", "Missing")
+    assert "doesnot exist" in out
