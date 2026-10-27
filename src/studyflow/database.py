@@ -131,20 +131,6 @@ def list_tasks(topic_id):
         con.close()
 
 
-def update_task_status(task_id, new_status):
-
-    con = get_connection()
-    cursor = con.cursor()
-    try:
-        cursor.execute("""
-        UPDATE tasks set status = ? WHERE id = ?
-        """,
-        (new_status, task_id,))
-        con.commit()
-        return cursor.rowcount == 1
-    finally:
-        con.close()
-
 def list_due_tasks():
     con = get_connection()
     cursor = con.cursor()
@@ -164,5 +150,50 @@ def list_due_tasks():
         ORDER BY tasks.due_date
         """,(todays_date,))
         return cursor.fetchall()
+    finally:
+        con.close()
+
+
+def upd_tasks(task_id, field, value):
+
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        if field in ("status", "title", "due_date"):
+            cursor.execute(f"""
+            UPDATE tasks SET {field} = ? WHERE id = ?;
+            """,(value, task_id))
+            con.commit()
+            return cursor.rowcount == 1
+        else:
+            raise ValueError(
+                f"Invalid field name:'{field}'.Must be 'status', 'title', or 'due_date'"
+                )
+    finally:
+        con.close()
+
+
+def upd_topic(new_topic_name, topic_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute(
+            "UPDATE topics SET topic_name = ? WHERE id = ?", (new_topic_name, topic_id)
+            )
+        con.commit()
+        return cursor.rowcount == 1
+    finally:
+        con.close()
+
+
+def upd_subject(new_subject_name, subject_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute(
+            "UPDATE subjects SET name = ? WHERE id = ?", (new_subject_name, subject_id)
+            )
+        con.commit()
+        return cursor.rowcount == 1
     finally:
         con.close()

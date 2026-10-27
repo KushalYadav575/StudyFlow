@@ -11,7 +11,9 @@ from .database import (
     list_tasks,
     list_topics,
     make_tables,
-    update_task_status,
+    upd_subject,
+    upd_tasks,
+    upd_topic,
 )
 
 parser = argparse.ArgumentParser(
@@ -136,24 +138,64 @@ list_task_parser.add_argument(
     help="id of the respective topic",
 )
 
-
-update_task_status_parser = subparsers.add_parser(
-    "updtaskstatus",
-    help="Update the status of the task"
+update_subject_parser = subparsers.add_parser(
+    "updsubject",
+    help="Update the title of a subject"
 )
 
-update_task_status_parser.add_argument(
+update_subject_parser.add_argument(
+    "--subject_id",
+    required=True,
+    type=int,
+    help="id of the subject"
+)
+
+update_subject_parser.add_argument(
+    "--title",
+    required=True,
+    help="title of the subject"
+)
+
+update_topic_parser = subparsers.add_parser(
+    "updtitle",
+    help="Update the title of a topic"
+)
+
+update_topic_parser.add_argument(
+    "--topic_id",
+    required=True,
+    type=int,
+    help="id of the topic"
+)
+
+update_topic_parser.add_argument(
+    "--title",
+    required=True,
+    help="title of the topic"
+)
+
+update_task_parser = subparsers.add_parser(
+    "updtask",
+    help="Updatethe fields of the task"
+)
+
+update_task_parser.add_argument(
     "--task_id",
     required=True,
     type=int,
     help="id of the respective task"
 )
 
-update_task_status_parser.add_argument(
-    "--status",
+update_task_parser.add_argument(
+    "--field",
     required=True,
-    choices=['not_started', 'in_progress', 'done'],
-    help="status of the respective task"
+    choices=["due_date", "title", "status"],
+    help="field needed to be changed of the respective task"
+)
+
+update_task_parser.add_argument(
+    "--value",
+    help="value the field has to be changed to"
 )
 
 
@@ -215,12 +257,59 @@ def list_tasks_command(args):
         print(f"ID:{row[0]} Name:{row[2]} Due Date:{row[3]} Status:{row[4]}")
 
 
-def update_taskstatus_command(args):
-    result = update_task_status(args.task_id, args.status)
+def update_task_command(args):
+    if args.field != "due_date" and args.value is None:
+        update_task_parser.error("--value is required for this field")
+
+    if args.field == "status":
+        if args.value not in ["not_started", "in_progress", "done"]:
+            update_task_parser.error(
+                "status must be one of: not_started, in_progress, done"
+            )
+
+    elif args.field == "due_date" and args.value is not None:
+        try:
+            validate_date(args.value)
+        except argparse.ArgumentTypeError as error:
+            update_task_parser.error(str(error))
+
+    result = upd_tasks(args.task_id, args.field, args.value)
+
     if result:
-        print(f"{args.status} applied to task id:{args.task_id}")
+        if args.field == "due_date" and args.value is None:
+            print(f"Due date cleared for task id:{args.task_id}")
+        else:
+            print(f"{args.value} set as {args.field} for task id:{args.task_id}")
     else:
         print("No task with that id found")
+
+
+def update_topic_command(args):
+    try:
+        result = upd_topic(args.title, args.topic_id)
+        if result:
+            print(f"topic name updated to {args.title}")
+        else:
+            print("that id doesnot exist in the database")
+    except sqlite3.IntegrityError as e:
+        if getattr(e, "sqlite_errorname", None) == "SQLITE_CONSTRAINT_UNIQUE":
+            print("Error: A topic with that name already exists under this subject.")
+        else:
+            raise 
+
+
+def update_subject_command(args):
+    try:
+        result = upd_subject(args.title, args.subject_id)
+        if result:
+            print(f"subject name updated to {args.title}")
+        else:
+            print("that id doesnot exist in the database")
+    except sqlite3.IntegrityError as e:
+        if getattr(e, "sqlite_errorname", None) == "SQLITE_CONSTRAINT_UNIQUE":
+            print("Error: A subject with that name already exists under this database.")
+        else:
+            raise 
 
 
 def list_due_tasks_command(args):
@@ -244,9 +333,10 @@ add_task_parser.set_defaults(func=add_task_command)
 list_sub_parser.set_defaults(func=list_sub_command)
 list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
-update_task_status_parser.set_defaults(func=update_taskstatus_command)
+update_task_parser.set_defaults(func=update_task_command)
 list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
-
+update_topic_parser.set_defaults(func=update_topic_command)
+update_subject_parser.set_defaults(func=update_subject_command)
 
 def main():
     args = parser.parse_args()
