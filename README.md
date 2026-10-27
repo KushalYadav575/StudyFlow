@@ -59,3 +59,23 @@ This lists unfinished tasks due today or earlier:
 ## Data storage
 
 StudyFlow stores its data in a local SQLite database. Subjects, topics, and tasks are saved between runs.
+
+### Update a task
+
+Change one field at a time. Valid fields are `title`, `status`, and `due_date`.
+
+    sf updtask --task_id 1 --field title --value "Practice equations"
+    sf updtask --task_id 1 --field status --value done
+    sf updtask --task_id 1 --field due_date --value 2026-10-30
+
+Clear a task's due date by leaving out `--value`:
+
+    sf updtask --task_id 1 --field due_date
+
+### Update a topic name
+
+    sf updtitle --topic_id 1 --title "Geometry"
+
+### Update a subject name
+
+    sf updsubject --subject_id 1 --title "Physics"
