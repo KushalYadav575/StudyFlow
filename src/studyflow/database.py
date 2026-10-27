@@ -197,3 +197,16 @@ def upd_subject(new_subject_name, subject_id):
         return cursor.rowcount == 1
     finally:
         con.close()
+
+
+def delete_task(task_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM tasks WHERE id = ?", (task_id,)
+            )
+        con.commit()
+        return cursor.rowcount == 1
+    finally:
+        con.close()

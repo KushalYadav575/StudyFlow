@@ -6,6 +6,7 @@ from .database import (
     add_subject,
     add_task,
     add_topic,
+    delete_task,
     list_due_tasks,
     list_subjects,
     list_tasks,
@@ -198,6 +199,17 @@ update_task_parser.add_argument(
     help="value the field has to be changed to"
 )
 
+delete_task_parser = subparsers.add_parser(
+    "deltask",
+    help="delete a specific task"
+)
+
+delete_task_parser.add_argument(
+    "--task_id",
+    required=True,
+    type=int,
+    help="id of the task"
+)
 
 def add_sub_command(args):
     try:
@@ -326,6 +338,13 @@ def list_due_tasks_command(args):
         )
 
 
+def delete_task_command(args):
+    result = delete_task(args.task_id)
+    if result:
+        print(f"task with id:{args.task_id} deleted")
+    else:
+        print("No task with that id exists")
+
 
 add_sub_parser.set_defaults(func=add_sub_command)
 add_topic_parser.set_defaults(func=add_topic_command)
@@ -337,6 +356,7 @@ update_task_parser.set_defaults(func=update_task_command)
 list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
 update_topic_parser.set_defaults(func=update_topic_command)
 update_subject_parser.set_defaults(func=update_subject_command)
+delete_task_parser.set_defaults(func=delete_task_command)
 
 def main():
     args = parser.parse_args()
