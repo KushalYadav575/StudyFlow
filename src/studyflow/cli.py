@@ -9,6 +9,7 @@ from .database import (
     delete_subject,
     delete_task,
     delete_topic,
+    list_all_tasks,
     list_due_tasks,
     list_subjects,
     list_tasks,
@@ -243,7 +244,10 @@ delete_subject_parser.add_argument(
     ),
 )
 
-
+list_all_tasks_parser = subparsers.add_parser(
+    "listalltasks",
+    help="List all tasks",
+)
 # Command handlers
 
 def add_sub_command(args):
@@ -415,6 +419,19 @@ def delete_subject_command(args):
         print("No subject with that ID exists.")
 
 
+def list_all_tasks_command(args):
+    tasks = list_all_tasks()
+
+    if not tasks:
+        print("No tasks found.")
+        return
+
+    for item in tasks:
+        print(
+            f"Task ID: {item[0]}, Subject: {item[1]}, "
+            f"Topic: {item[2]}, Title: {item[3]}, "
+            f"Due date: {item[4]}, Status: {item[5]}"
+        )
 # Connect each subcommand to its handler
 
 add_sub_parser.set_defaults(func=add_sub_command)
@@ -425,6 +442,7 @@ list_sub_parser.set_defaults(func=list_sub_command)
 list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
 list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
+list_all_tasks_parser.set_defaults(func=list_all_tasks_command)
 
 update_task_parser.set_defaults(func=update_task_command)
 update_topic_parser.set_defaults(func=update_topic_command)

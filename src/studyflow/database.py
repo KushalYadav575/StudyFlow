@@ -236,3 +236,26 @@ def delete_subject(subject_id):
         return cursor.rowcount == 1
     finally:
         con.close()
+
+
+def list_all_tasks():
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("""
+        SELECT tasks.id,
+        subjects.name,
+        topics.topic_name,
+        tasks.title,
+        tasks.due_date,
+        tasks.status
+        FROM tasks 
+        JOIN topics ON topics.id = tasks.topic_id
+        JOIN subjects ON subjects.id = topics.subject_id
+        ORDER BY subjects.name, topics.topic_name,
+        tasks.due_date IS NULL, tasks.due_date;
+
+        """)
+        return cursor.fetchall()
+    finally:
+        con.close()

@@ -77,21 +77,24 @@ def test_cli_update_commands(sf):
     assert "Due date cleared" in out
 
     out = sf("updtitle", "--topic_id", "1", "--title", "Geometry")
-    assert "topic name updated" in out
+    assert "Topic name updated" in out
 
     out = sf("updsubject", "--subject_id", "1", "--title", "Science")
-    assert "subject name updated" in out
+    assert "Subject name updated" in out
 
 
 def test_cli_update_missing_ids(sf):
-    out = sf("updtask", "--task_id", "99999", "--field", "title", "--value", "Missing")
-    assert "No task with that id" in out
+    out = sf(
+        "updtask", "--task_id", "99999",
+        "--field", "title", "--value", "Missing"
+    )
+    assert "No task with that ID" in out
 
     out = sf("updtitle", "--topic_id", "99999", "--title", "Missing")
-    assert "doesnot exist" in out
+    assert "No topic with that ID was found" in out
 
     out = sf("updsubject", "--subject_id", "99999", "--title", "Missing")
-    assert "doesnot exist" in out
+    assert "No subject with that ID was found" in out
 
 def test_cli_delete_task(sf):
     sf("addsub", "--name", "Math")
@@ -102,4 +105,33 @@ def test_cli_delete_task(sf):
     assert "deleted" in out
 
     out = sf("deltask", "--task_id", "99999")
-    assert "No task with that id exists" in out
+    assert "No task with that ID exists" in out
+
+def test_cli_list_all_tasks(sf):
+    sf("addsub", "--name", "Biology")
+    sf("addsub", "--name", "Math")
+
+    sf("addtopic", "--name", "Cells", "--subject_id", "1")
+    sf("addtopic", "--name", "Algebra", "--subject_id", "2")
+
+    sf("addtask", "--topic_id", "1", "--name", "Review cells", "--due_date", "2026-10-29")
+    sf("addtask", "--topic_id", "2", "--name", "Practice equations", "--due_date", "2026-10-28")
+
+    out = sf("listalltasks")
+
+    assert "Task ID: 1" in out
+    assert "Subject: Biology" in out
+    assert "Topic: Cells" in out
+    assert "Title: Review cells" in out
+
+    assert "Task ID: 2" in out
+    assert "Subject: Math" in out
+    assert "Topic: Algebra" in out
+    assert "Title: Practice equations" in out
+
+    assert out.index("Title: Review cells") < out.index("Title: Practice equations")
+
+
+def test_cli_list_all_tasks_when_empty(sf):
+    out = sf("listalltasks")
+    assert "No tasks found." in out

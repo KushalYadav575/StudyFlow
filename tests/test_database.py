@@ -123,3 +123,55 @@ def test_delete_task(db, seeded):
     assert db.list_tasks(seeded.topic_id) == []
 
     assert db.delete_task(99999) is False
+
+def test_list_all_tasks_order_and_data(db):
+    biology_id = db.add_subject("Biology")
+    math_id = db.add_subject("Math")
+
+    cells_id = db.add_topic(biology_id, "Cells")
+    algebra_id = db.add_topic(math_id, "Algebra")
+    geometry_id = db.add_topic(math_id, "Geometry")
+
+    cells_dated_id = db.add_task(cells_id, "Review cells", "2026-10-29")
+    cells_undated_id = db.add_task(cells_id, "Draw a cell")
+    algebra_id_task = db.add_task(algebra_id, "Practice equations", "2026-10-28")
+    geometry_id_task = db.add_task(geometry_id, "Review angles", "2026-10-30")
+
+    assert db.list_all_tasks() == [
+        (
+            cells_dated_id,
+            "Biology",
+            "Cells",
+            "Review cells",
+            "2026-10-29",
+            "not_started",
+        ),
+        (
+            cells_undated_id,
+            "Biology",
+            "Cells",
+            "Draw a cell",
+            None,
+            "not_started",
+        ),
+        (
+            algebra_id_task,
+            "Math",
+            "Algebra",
+            "Practice equations",
+            "2026-10-28",
+            "not_started",
+        ),
+        (
+            geometry_id_task,
+            "Math",
+            "Geometry",
+            "Review angles",
+            "2026-10-30",
+            "not_started",
+        ),
+    ]
+
+
+def test_list_all_tasks_empty(db):
+    assert db.list_all_tasks() == []

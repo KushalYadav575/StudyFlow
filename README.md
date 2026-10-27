@@ -85,3 +85,9 @@ Clear a task's due date by leaving out `--value`:
 Use the task’s ID to delete it:
 
     sf deltask --task_id 1
+
+### List all tasks
+
+Show every task with its subject, topic, due date, and status:
+
+    sf listalltasks
