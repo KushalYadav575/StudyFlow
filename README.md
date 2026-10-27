@@ -79,3 +79,9 @@ Clear a task's due date by leaving out `--value`:
 ### Update a subject name
 
     sf updsubject --subject_id 1 --title "Physics"
+
+### Delete a task
+
+Use the task’s ID to delete it:
+
+    sf deltask --task_id 1
