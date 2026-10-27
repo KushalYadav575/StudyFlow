@@ -68,7 +68,9 @@ def test_cli_update_commands(sf):
     out = sf("updtask", "--task_id", "1", "--field", "status", "--value", "done")
     assert "done" in out
 
-    out = sf("updtask", "--task_id", "1", "--field", "due_date", "--value", "2026-11-01")
+    out = sf(
+        "updtask", "--task_id", "1", "--field", "due_date", "--value", "2026-11-01"
+        )
     assert "2026-11-01" in out
 
     out = sf("updtask", "--task_id", "1", "--field", "due_date")
