@@ -210,3 +210,29 @@ def delete_task(task_id):
         return cursor.rowcount == 1
     finally:
         con.close()
+
+def delete_topic(topic_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute(
+        "DELETE FROM topics WHERE id = ?", (topic_id,)
+        )
+        con.commit()
+
+        return cursor.rowcount == 1
+    finally:
+        con.close()
+
+
+def delete_subject(subject_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM subjects WHERE id = ?", (subject_id,)
+            )
+        con.commit()
+        return cursor.rowcount == 1
+    finally:
+        con.close()
