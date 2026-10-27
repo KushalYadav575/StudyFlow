@@ -115,3 +115,11 @@ def test_update_subject(db, seeded):
     other_subject_id = db.add_subject("Physics")
     with pytest.raises(sqlite3.IntegrityError):
         db.upd_subject("Science", other_subject_id)
+
+def test_delete_task(db, seeded):
+    task_id = db.add_task(seeded.topic_id, "HW1")
+
+    assert db.delete_task(task_id) is True
+    assert db.list_tasks(seeded.topic_id) == []
+
+    assert db.delete_task(99999) is False

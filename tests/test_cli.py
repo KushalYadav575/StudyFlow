@@ -92,3 +92,14 @@ def test_cli_update_missing_ids(sf):
 
     out = sf("updsubject", "--subject_id", "99999", "--title", "Missing")
     assert "doesnot exist" in out
+
+def test_cli_delete_task(sf):
+    sf("addsub", "--name", "Math")
+    sf("addtopic", "--name", "Algebra", "--subject_id", "1")
+    sf("addtask", "--topic_id", "1", "--name", "HW1")
+
+    out = sf("deltask", "--task_id", "1")
+    assert "deleted" in out
+
+    out = sf("deltask", "--task_id", "99999")
+    assert "No task with that id exists" in out
