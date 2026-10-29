@@ -1,4 +1,5 @@
 import argparse
+import csv
 import sqlite3
 from datetime import datetime
 
@@ -9,6 +10,7 @@ from .database import (
     delete_subject,
     delete_task,
     delete_topic,
+    import_file,
     list_all_tasks,
     list_due_tasks,
     list_subjects,
@@ -267,6 +269,27 @@ list_all_tasks_parser.add_argument(
     choices=["not_started", "in_progress", "done"],
     help="Filter tasks by status",
 )
+
+export_parser = subparsers.add_parser(
+    "export",
+    help="Export tasks to a file",
+)
+export_parser.add_argument(
+    "--file",
+    required=True,
+    help="Path to the file where tasks will be exported",
+)
+
+import_parser = subparsers.add_parser(
+    "import",
+    help="Import tasks from a file",
+)
+import_parser.add_argument(
+    "--file",
+    required=True,
+    help="Path to the file from which tasks will be imported",
+)
+
 # Command handlers
 
 def add_sub_command(args):
@@ -465,12 +488,47 @@ def subject_progress_command(args):
 Name: {subject_name(args.subject_id)}
 Progress: {progress:.2f}%""")
 
+
+def export_command(args):
+    tasks = list_all_tasks()
+
+    try:
+        with open(args.file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                ["Task ID", "Subject", "Topic", "Title", "Due date", "Status"])
+            for item in tasks:
+                writer.writerow(item)
+    except IOError as error:
+        print(f"Error writing to file: {error}")
+    else:
+        if tasks:
+            print(f"{len(tasks)} tasks successfully exported to {args.file}.")
+        else:
+            print(f"Empty CSV with headers created at {args.file}.")
+
+
+def import_command(args):
+    try:
+        imported_count = import_file(args.file)
+    except FileNotFoundError:
+        print(f"File {args.file} not found.")
+    except IOError as error:
+        print(f"Error reading file: {error}")
+    except ValueError as error:
+        print(f"Error importing tasks: {error}")
+    except sqlite3.Error as error:
+        print(f"Database error: {error}")
+    else:
+        print(f"{imported_count} tasks successfully imported from {args.file}.")
 # Connect each subcommand to its handler
 
+# Add commands
 add_sub_parser.set_defaults(func=add_sub_command)
 add_topic_parser.set_defaults(func=add_topic_command)
 add_task_parser.set_defaults(func=add_task_command)
 
+# List / Progress commands
 list_sub_parser.set_defaults(func=list_sub_command)
 list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
@@ -478,13 +536,19 @@ list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
 list_all_tasks_parser.set_defaults(func=list_all_tasks_command)
 subject_progress_parser.set_defaults(func=subject_progress_command)
 
+# Update commands
 update_task_parser.set_defaults(func=update_task_command)
 update_topic_parser.set_defaults(func=update_topic_command)
 update_subject_parser.set_defaults(func=update_subject_command)
 
+# Delete commands
 delete_task_parser.set_defaults(func=delete_task_command)
 delete_topic_parser.set_defaults(func=delete_topic_command)
 delete_subject_parser.set_defaults(func=delete_subject_command)
+
+# Data Exchange commands
+export_parser.set_defaults(func=export_command)
+import_parser.set_defaults(func=import_command)
 
 
 def main():

@@ -1,3 +1,4 @@
+import csv
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -320,5 +321,106 @@ def subject_name(subject_id):
         if result is None:
             raise ValueError(f"No subject with ID {subject_id} exists.")
         return result[0]
+    finally:
+        con.close()
+
+
+def import_file(file_path):
+    required_columns = {"Subject", "Topic", "Title", "Due date", "Status"}
+    valid_statuses = {"not_started", "in_progress", "done"}
+
+    con = get_connection()
+
+    try:
+        with open(file_path, "r", newline="", encoding="utf-8-sig") as csvfile:
+            reader = csv.DictReader(csvfile)
+
+            if reader.fieldnames is None:
+                raise ValueError("The CSV file is empty or has no header row.")
+
+            missing_columns = required_columns - set(reader.fieldnames)
+            if missing_columns:
+                missing = ", ".join(sorted(missing_columns))
+                raise ValueError(f"CSV is missing required columns: {missing}")
+
+            cursor = con.cursor()
+            imported_count = 0
+
+            for row_number, row in enumerate(reader, start=2):
+                subject_name = (row.get("Subject") or "").strip()
+                topic_name = (row.get("Topic") or "").strip()
+                task_title = (row.get("Title") or "").strip()
+                due_date_text = (row.get("Due date") or "").strip()
+                status = (row.get("Status") or "").strip()
+
+                if not subject_name or not topic_name or not task_title:
+                    raise ValueError(
+                        f"CSV row {row_number}: subject, topic, and title "
+                        "must not be empty."
+                    )
+
+                if status not in valid_statuses:
+                    raise ValueError(
+                        f"CSV row {row_number}: invalid status '{status}'. "
+                        "Use not_started, in_progress, or done."
+                    )
+
+                due_date = due_date_text or None
+                if due_date is not None:
+                    if (
+                        len(due_date) != 10
+                        or due_date[4] != "-"
+                        or due_date[7] != "-"
+                    ):
+                        raise ValueError(
+                            f"CSV row {row_number}: invalid due date "
+                            f"'{due_date}'. Use YYYY-MM-DD."
+                        )
+
+                    try:
+                        datetime.strptime(due_date, "%Y-%m-%d")
+                    except ValueError as error:
+                        raise ValueError(
+                            f"CSV row {row_number}: invalid due date "
+                            f"'{due_date}'. Use a real date in YYYY-MM-DD format."
+                        ) from error
+
+                cursor.execute(
+                    "INSERT OR IGNORE INTO subjects (name) VALUES (?);",
+                    (subject_name,),
+                )
+                cursor.execute(
+                    "SELECT id FROM subjects WHERE name = ?;",
+                    (subject_name,),
+                )
+                subject_id = cursor.fetchone()[0]
+
+                cursor.execute(
+                    "INSERT OR IGNORE INTO topics (subject_id, topic_name) "
+                    "VALUES (?, ?);",
+                    (subject_id, topic_name),
+                )
+                cursor.execute(
+                    "SELECT id FROM topics "
+                    "WHERE subject_id = ? AND topic_name = ?;",
+                    (subject_id, topic_name),
+                )
+                topic_id = cursor.fetchone()[0]
+
+                cursor.execute(
+                    "INSERT INTO tasks (topic_id, title, due_date, status) "
+                    "VALUES (?, ?, ?, ?);",
+                    (topic_id, task_title, due_date, status),
+                )
+
+                imported_count += 1
+
+        con.commit()
+        return imported_count
+
+    except Exception:
+        con.rollback()
+        raise
+
     finally:
         con.close()
