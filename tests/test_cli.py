@@ -176,3 +176,24 @@ def test_cli_list_all_tasks_status_filter(sf):
 def test_cli_list_all_tasks_rejects_invalid_status(project):
     with pytest.raises(SystemExit):
         parse(project, "listalltasks", "--status", "waiting")
+
+def test_cli_export_import_round_trip(sf, tmp_path):
+    csv_path = tmp_path / "tasks.csv"
+
+    sf("addsub", "--name", "Math")
+    sf("addtopic", "--name", "Algebra", "--subject_id", "1")
+    sf("addtask", "--topic_id", "1", "--name", 'Review, "Chapter 2"')
+    sf("updtask", "--task_id", "1", "--field", "status", "--value", "done")
+
+    export_out = sf("export", "--file", str(csv_path))
+    assert "successfully exported" in export_out
+    assert csv_path.exists()
+
+    sf("deltask", "--task_id", "1")
+
+    import_out = sf("import", "--file", str(csv_path))
+    assert "1 tasks successfully imported" in import_out
+
+    tasks_out = sf("listalltasks")
+    assert 'Review, "Chapter 2"' in tasks_out
+    assert "Status: done" in tasks_out

@@ -1,3 +1,4 @@
+import csv
 import sqlite3
 from datetime import datetime
 
@@ -215,3 +216,42 @@ def test_list_all_tasks_status_filter(db, seeded):
 
     with pytest.raises(ValueError):
         db.list_all_tasks("waiting")
+
+def test_import_file_preserves_task_data_and_reuses_records(db, seeded, tmp_path):
+    csv_path = tmp_path / "tasks.csv"
+
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            ["Task ID", "Subject", "Topic", "Title", "Due date", "Status"]
+        )
+        writer.writerow(
+            ["500", "Math", "Algebra", 'Review, "Chapter 2"', "2026-11-03", "done"]
+        )
+
+    imported_count = db.import_file(csv_path)
+
+    assert imported_count == 1
+    assert db.list_subjects() == [(seeded.subject_id, "Math")]
+    assert len(db.list_topics(seeded.subject_id)) == 1
+
+    task = db.list_tasks(seeded.topic_id)[0]
+    assert task[2:] == ('Review, "Chapter 2"', "2026-11-03", "done")
+
+
+def test_import_file_rolls_back_if_a_row_is_invalid(db, tmp_path):
+    csv_path = tmp_path / "invalid_tasks.csv"
+
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            ["Task ID", "Subject", "Topic", "Title", "Due date", "Status"]
+        )
+        writer.writerow(["1", "Math", "Algebra", "Valid task", "", "done"])
+        writer.writerow(["2", "Science", "Cells", "Invalid task", "", "waiting"])
+
+    with pytest.raises(ValueError):
+        db.import_file(csv_path)
+
+    assert db.list_subjects() == []
+    assert db.list_all_tasks() == []
