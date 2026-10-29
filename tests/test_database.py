@@ -175,3 +175,43 @@ def test_list_all_tasks_order_and_data(db):
 
 def test_list_all_tasks_empty(db):
     assert db.list_all_tasks() == []
+
+def test_subject_progress_and_name(db, seeded):
+    task_one = db.add_task(seeded.topic_id, "HW1")
+    task_two = db.add_task(seeded.topic_id, "HW2")
+
+    assert db.subject_name(seeded.subject_id) == "Math"
+    assert db.subject_progress(seeded.subject_id) == 0.0
+
+    db.upd_tasks(task_one, "status", "done")
+    assert db.subject_progress(seeded.subject_id) == 50.0
+
+    db.upd_tasks(task_two, "status", "done")
+    assert db.subject_progress(seeded.subject_id) == 100.0
+
+    with pytest.raises(ValueError):
+        db.subject_name(99999)
+
+    with pytest.raises(ValueError):
+        db.subject_progress(99999)
+
+
+def test_subject_progress_with_no_tasks(db, seeded):
+    assert db.subject_progress(seeded.subject_id) == 0.0
+
+
+def test_list_all_tasks_status_filter(db, seeded):
+    open_task_id = db.add_task(seeded.topic_id, "Open task")
+    done_task_id = db.add_task(seeded.topic_id, "Done task")
+    db.upd_tasks(done_task_id, "status", "done")
+
+    all_tasks = db.list_all_tasks()
+    done_tasks = db.list_all_tasks("done")
+    open_tasks = db.list_all_tasks("not_started")
+
+    assert {row[0] for row in all_tasks} == {open_task_id, done_task_id}
+    assert [row[0] for row in done_tasks] == [done_task_id]
+    assert [row[0] for row in open_tasks] == [open_task_id]
+
+    with pytest.raises(ValueError):
+        db.list_all_tasks("waiting")

@@ -137,3 +137,42 @@ def test_cli_list_all_tasks(sf):
 def test_cli_list_all_tasks_when_empty(sf):
     out = sf("listalltasks")
     assert "No tasks found." in out
+
+def test_cli_subject_progress(sf):
+    sf("addsub", "--name", "Math")
+    sf("addtopic", "--name", "Algebra", "--subject_id", "1")
+    sf("addtask", "--topic_id", "1", "--name", "HW1")
+    sf("addtask", "--topic_id", "1", "--name", "HW2")
+    sf("updtask", "--task_id", "1", "--field", "status", "--value", "done")
+
+    out = sf("subject_progress", "--subject_id", "1")
+    assert "Name: Math" in out
+    assert "Progress: 50.00%" in out
+
+    out = sf("subject_progress", "--subject_id", "99999")
+    assert "No subject with ID 99999 exists" in out
+
+
+def test_cli_list_all_tasks_status_filter(sf):
+    sf("addsub", "--name", "Math")
+    sf("addtopic", "--name", "Algebra", "--subject_id", "1")
+    sf("addtask", "--topic_id", "1", "--name", "Open task")
+    sf("addtask", "--topic_id", "1", "--name", "Done task")
+    sf("updtask", "--task_id", "2", "--field", "status", "--value", "done")
+
+    all_tasks = sf("listalltasks")
+    assert "Open task" in all_tasks
+    assert "Done task" in all_tasks
+
+    done_tasks = sf("listalltasks", "--status", "done")
+    assert "Done task" in done_tasks
+    assert "Open task" not in done_tasks
+
+    open_tasks = sf("listalltasks", "--status", "not_started")
+    assert "Open task" in open_tasks
+    assert "Done task" not in open_tasks
+
+
+def test_cli_list_all_tasks_rejects_invalid_status(project):
+    with pytest.raises(SystemExit):
+        parse(project, "listalltasks", "--status", "waiting")
