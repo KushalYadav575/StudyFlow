@@ -9,6 +9,7 @@ def get_connection():
     cur_dir = Path(__file__).parent.parent.parent
 
     db_path = cur_dir / 'data' / 'studyflow.db'
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(db_path)
     con.execute("PRAGMA foreign_keys = ON;")
 
