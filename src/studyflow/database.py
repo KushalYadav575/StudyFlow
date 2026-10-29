@@ -238,24 +238,87 @@ def delete_subject(subject_id):
         con.close()
 
 
-def list_all_tasks():
+def list_all_tasks(status=None):
     con = get_connection()
     cursor = con.cursor()
     try:
-        cursor.execute("""
-        SELECT tasks.id,
-        subjects.name,
-        topics.topic_name,
-        tasks.title,
-        tasks.due_date,
-        tasks.status
-        FROM tasks 
-        JOIN topics ON topics.id = tasks.topic_id
-        JOIN subjects ON subjects.id = topics.subject_id
-        ORDER BY subjects.name, topics.topic_name,
-        tasks.due_date IS NULL, tasks.due_date;
+        if status in ["not_started", "in_progress", "done"]:
+            cursor.execute("""
+            SELECT tasks.id,
+            subjects.name,
+            topics.topic_name,
+            tasks.title,
+            tasks.due_date,
+            tasks.status
+            FROM tasks 
+            JOIN topics ON topics.id = tasks.topic_id
+            JOIN subjects ON subjects.id = topics.subject_id
+            WHERE tasks.status = ?
+            ORDER BY subjects.name, topics.topic_name,
+            tasks.due_date IS NULL, tasks.due_date;
+            """, (status,))
+            return cursor.fetchall()
+        elif  status is None:
+            cursor.execute("""
+            SELECT tasks.id,
+            subjects.name,
+            topics.topic_name,
+            tasks.title,
+            tasks.due_date,
+            tasks.status
+            FROM tasks 
+            JOIN topics ON topics.id = tasks.topic_id
+            JOIN subjects ON subjects.id = topics.subject_id
+            ORDER BY subjects.name, topics.topic_name,
+            tasks.due_date IS NULL, tasks.due_date;
+            """)
+            return cursor.fetchall()
+        else:
+            raise ValueError(
+                f"""Invalid status value: '{status}'.
+                Must be 'not_started', 'in_progress', 'done', or None."""
+                )
+    finally:
+        con.close()
 
-        """)
-        return cursor.fetchall()
+
+def subject_progress(subject_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM subjects WHERE id = ?", (subject_id,))
+        if cursor.fetchone() is None:
+            raise ValueError(f"No subject with ID {subject_id} exists.")
+        cursor.execute("""
+        SELECT COUNT(*) FROM tasks
+        JOIN topics ON topics.id = tasks.topic_id
+        WHERE topics.subject_id = ? AND tasks.status = 'done';
+        """, (subject_id,))
+        done_count = cursor.fetchone()[0]
+
+        cursor.execute("""
+        SELECT COUNT(*) FROM tasks
+        JOIN topics ON topics.id = tasks.topic_id
+        WHERE topics.subject_id = ?;
+        """, (subject_id,))
+        total_count = cursor.fetchone()[0]
+
+        if total_count == 0:
+            return 0.0
+
+        return done_count / total_count * 100
+    finally:
+        con.close()
+
+
+def subject_name(subject_id):
+    con = get_connection()
+    cursor = con.cursor()
+    try:
+        cursor.execute("SELECT name FROM subjects WHERE id = ?", (subject_id,))
+        result = cursor.fetchone()
+        if result is None:
+            raise ValueError(f"No subject with ID {subject_id} exists.")
+        return result[0]
     finally:
         con.close()

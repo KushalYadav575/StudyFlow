@@ -15,6 +15,8 @@ from .database import (
     list_tasks,
     list_topics,
     make_tables,
+    subject_name,
+    subject_progress,
     upd_subject,
     upd_tasks,
     upd_topic,
@@ -144,6 +146,17 @@ list_due_tasks_parser = subparsers.add_parser(
 )
 
 
+subject_progress_parser = subparsers.add_parser(
+    "subject_progress",
+    help="Show progress for a subject",
+)
+subject_progress_parser.add_argument(
+    "--subject_id",
+    required=True,
+    type=int,
+    help="ID of the subject",
+)
+
 # Update commands
 
 update_subject_parser = subparsers.add_parser(
@@ -247,6 +260,12 @@ delete_subject_parser.add_argument(
 list_all_tasks_parser = subparsers.add_parser(
     "listalltasks",
     help="List all tasks",
+)
+
+list_all_tasks_parser.add_argument(
+    "--status",
+    choices=["not_started", "in_progress", "done"],
+    help="Filter tasks by status",
 )
 # Command handlers
 
@@ -420,7 +439,7 @@ def delete_subject_command(args):
 
 
 def list_all_tasks_command(args):
-    tasks = list_all_tasks()
+    tasks = list_all_tasks(status=args.status)
 
     if not tasks:
         print("No tasks found.")
@@ -432,6 +451,20 @@ def list_all_tasks_command(args):
             f"Topic: {item[2]}, Title: {item[3]}, "
             f"Due date: {item[4]}, Status: {item[5]}"
         )
+
+
+def subject_progress_command(args):
+    try:
+        progress = subject_progress(args.subject_id)
+    except ValueError as error:
+        print(error)
+        return
+
+    print(
+        f"""Subject ID {args.subject_id}
+Name: {subject_name(args.subject_id)}
+Progress: {progress:.2f}%""")
+
 # Connect each subcommand to its handler
 
 add_sub_parser.set_defaults(func=add_sub_command)
@@ -443,6 +476,7 @@ list_topics_parser.set_defaults(func=list_topics_command)
 list_task_parser.set_defaults(func=list_tasks_command)
 list_due_tasks_parser.set_defaults(func=list_due_tasks_command)
 list_all_tasks_parser.set_defaults(func=list_all_tasks_command)
+subject_progress_parser.set_defaults(func=subject_progress_command)
 
 update_task_parser.set_defaults(func=update_task_command)
 update_topic_parser.set_defaults(func=update_topic_command)
