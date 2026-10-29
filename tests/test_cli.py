@@ -114,8 +114,10 @@ def test_cli_list_all_tasks(sf):
     sf("addtopic", "--name", "Cells", "--subject_id", "1")
     sf("addtopic", "--name", "Algebra", "--subject_id", "2")
 
-    sf("addtask", "--topic_id", "1", "--name", "Review cells", "--due_date", "2026-10-29")
-    sf("addtask", "--topic_id", "2", "--name", "Practice equations", "--due_date", "2026-10-28")
+    sf("addtask",
+    "--topic_id", "1", "--name", "Review cells", "--due_date", "2026-10-29")
+    sf("addtask",
+    "--topic_id", "2", "--name", "Practice equations", "--due_date", "2026-10-28")
 
     out = sf("listalltasks")
 
